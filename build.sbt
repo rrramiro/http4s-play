@@ -1,40 +1,68 @@
-lazy val testing = Project(id = "testing", base = file("http4s"))
-lazy val core = Project(id="core", base=file("http4s"))
-lazy val examples = Project(id = "examples", base = file("http4s"))
-lazy val server = Project(id = "server", base = file("http4s"))
 
-lazy val fs2Io                            = "co.fs2"                 %% "fs2-io"                    % "0.10.3"
-lazy val fs2ReactiveStreams = "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.1"
+lazy val playVersion = "2.8.18"
+lazy val fs2Version  = "2.4.2"
+lazy val http4sVersion = "0.21.7"
+lazy val circeVersion  = "0.13.0"
+lazy val akkaVersion    = "2.6.10"
+lazy val scalaTestPlayVersion  = "5.1.0"
+lazy val scalaTestVersion  = "3.2.9"
+lazy val monixVersion = "3.4.0"
+
+ThisBuild / scalaVersion := "2.13.10"
+
+lazy val `examples-monix` = project.in(file("example-monix"))
+  .enablePlugins(PlayScala)
+  .settings(
+    description := "Example of http4s on Play with Monix",
+    Compile / scalacOptions -= "-Xfatal-warnings",
+    libraryDependencies ++= Seq(
+      "io.monix"   %% "monix"               % monixVersion,
+      "io.circe"   %% "circe-generic"       % circeVersion,
+      "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+      "org.http4s" %% "http4s-dsl"          % http4sVersion,
+      "org.http4s" %% "http4s-circe"        % http4sVersion,
+      "org.http4s" %% "http4s-twirl"        % http4sVersion,
+      "org.http4s" %% "http4s-scala-xml"    % http4sVersion,
+      "com.softwaremill.macwire" %% "macros" % "2.3.7" % "provided",
+      // "javax.xml.bind" % "jaxb-api" % "2.3.0",
+    )
+  )
+  .dependsOn(`play-route`)
 
 lazy val `examples-play` = project.in(file("example"))
  .enablePlugins(PlayScala)
   .settings(
     description := "Example of http4s on Play",
-    scalacOptions in Compile -= "-Xfatal-warnings",
+    Compile / scalacOptions  -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
-      guice,
-      jaxbApi,
-    ),
+      "io.circe"   %% "circe-generic"       % circeVersion,
+      "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+      "org.http4s" %% "http4s-dsl"          % http4sVersion,
+      "org.http4s" %% "http4s-circe"        % http4sVersion,
+      "org.http4s" %% "http4s-twirl"        % http4sVersion,
+      "org.http4s" %% "http4s-scala-xml"    % http4sVersion,
+      "com.softwaremill.macwire" %% "macros" % "2.3.7" % "provided"
+    )
   )
   .dependsOn(`play-route`)
 
-
-lazy val `play-route` = project
+lazy val `play-route` = project.in(file("."))
   .settings(
     description := "Play wrapper of http4s services",
     libraryDependencies ++= Seq(
-      play,
-      fs2Io,
-      fs2ReactiveStreams,
-      playAkkaHttpServer % "test"
-    )
+      "co.fs2"                 %% "fs2-io"                % fs2Version,
+      "co.fs2"                 %% "fs2-reactive-streams"  % fs2Version,
+      "com.typesafe.akka"      %% "akka-stream"           % akkaVersion,
+      "com.typesafe.play"      %% "play"                  % playVersion,
+      "com.typesafe.play"      %% "play-akka-http-server" % playVersion % Test,
+      "org.http4s"             %% "http4s-server"         % http4sVersion,
+      "org.http4s"             %% "http4s-core"           % http4sVersion,
+      "org.http4s"             %% "http4s-dsl"            % http4sVersion % Test,
+      "org.scalatestplus.play" %% "scalatestplus-play"    % scalaTestPlayVersion % Test,
+      "org.scalatest"          %% "scalatest"             % scalaTestVersion % Test
+    ),
+    Compile / compile / wartremoverErrors := Seq.empty,
+    Test / compile / wartremoverErrors := Seq.empty
   )
-.dependsOn(examples)
-  .dependsOn(core, server % "compile;test->test", testing % "test->test") 
 
-
-  lazy val play                             = "com.typesafe.play"      %% "play"                      % "2.6.13"
-  lazy val playAkkaHttpServer               = "com.typesafe.play"      %% "play-akka-http-server"     % "2.6.13"
-  lazy val jaxbApi = "javax.xml.bind" % "jaxb-api" % "2.3.0"
-
-
+Global / onChangedBuildSource := ReloadOnSourceChanges
